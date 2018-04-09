@@ -27,7 +27,7 @@ model = word2vec.Word2Vec(sentences, size=300, window=5, min_count=2, iter=10, s
 
 model.save("pitch2vec")
 
-str_data = read_data(root_path + filename)
+str_data = read_data("pitchfork.txt")
 index_data = convert_data_to_index(str_data, model.wv)
 
 
