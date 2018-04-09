@@ -1,7 +1,6 @@
 import zipfile
 import sqlite3
 
-
 zipfile.ZipFile("database.sqlite.zip", 'r').extractall()
 zip_ref.close()
 
