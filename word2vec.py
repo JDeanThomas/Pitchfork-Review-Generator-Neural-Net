@@ -1,4 +1,5 @@
 import gensim
+from gensim.models import word2vec
 import re
 
 def read_data(filename):
@@ -19,9 +20,9 @@ def convert_data_to_index(string_data, wv):
 
 #sentences = re.split(r' *[\.\?!][\'"\)\]]* *', text)
 
-sentences = LineSentence('pitchfork.txt')
+sentences = word2vec.LineSentence('pitchfork.txt')
 
-model = Word2Vec(sentences, size=300, window=5, min_count=2, iter=10, sg=1,
+model = word2vec.Word2Vec(sentences, size=300, window=5, min_count=2, iter=10, sg=1,
                             negative=True, compute_loss=True, workers=8)
 
 model.save("pitch2vec")
