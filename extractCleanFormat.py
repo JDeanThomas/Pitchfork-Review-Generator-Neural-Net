@@ -61,7 +61,6 @@ with open('./Data/pitchfork.txt', 'w') as file:
 def sentence_tokenize(corpus):
     sentences = []
     for i in range(len(corpus)):
-        #temp = []
         temp = re.split('(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<![A-Z]\.)(?<=\.|\?)\s|(?<=[.!?][\"”]) +', corpus[i])
         for k in range(len(temp)):
             sentences.append(temp[k])
