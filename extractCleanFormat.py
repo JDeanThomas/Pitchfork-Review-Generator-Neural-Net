@@ -42,7 +42,6 @@ def normalize_unicode(query):
 
 pitchfork = normalize_unicode(pitchfork)
 
-
 # Write out compacted reviews as txt file
 # with line break separating each review
 with open('./Data/pitchfork.txt', 'w') as file:
@@ -67,7 +66,6 @@ def sentence_tokenize(corpus):
     return sentences
 
 pitchfork_sentences = sentence_tokenize(pitchfork)
-
 
 # Write out single sentences as txt file
 # with line break separating each review
