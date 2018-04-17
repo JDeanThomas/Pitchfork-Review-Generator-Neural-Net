@@ -39,7 +39,6 @@ def normalize_unicode(query):
         # data.append(unicodedata.normalize("NFKD", row[0].strip()))
     return data
 
-
 pitchfork = normalize_unicode(pitchfork)
 
 
@@ -58,7 +57,6 @@ def sentence_tokenize(corpus):
             sentences.append(temp[k])
     sentences = list(filter(None, sentences))
     return sentences
-
 
 pitchfork_sentences = sentence_tokenize(pitchfork)
 
