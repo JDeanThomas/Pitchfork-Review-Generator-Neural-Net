@@ -11,8 +11,7 @@ if os.path.exists('./data/database.sqlite.zip'):
         myzip.extractall('./Data')
         del myzip
 else:
-    raise Exception(
-        'Download Pitchfork Reviews DB from Kaggle')
+    raise Exception('Download Pitchfork Reviews DB from Kaggle')
 
 # Connect to DB, query and extract text reviews
 conn = sqlite3.connect("./Data/database.sqlite")
