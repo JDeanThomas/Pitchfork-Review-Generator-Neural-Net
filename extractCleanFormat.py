@@ -78,8 +78,8 @@ len(errors)
 
 pitchfork_sentences = [i for i in pitchfork_sentences if not regex.search(i)]
 
-# There are 490 sentences with a pattern \x[A-Z0-9][A-Z0-9] replacing
-# words with non-english characters not coded in unicode.
+# There are 490 sentences with a pattern \x[A-Z0-9][A-Z0-9]
+# encoding errors of unknown origin
 # Inspection shows all can simply be deleted
 # without altering any sentence syntax (yay!).
 regex = re.compile(r'\\x[A-Z0-9][A-Z0-9]')
@@ -88,8 +88,7 @@ len(errors)
 
 pitchfork_sentences = [re.sub(r'\\x[A-Z0-9][A-Z0-9]', '', i) for i in pitchfork_sentences]
 
-
-# No more encoding errors
+# No more encoding errors!
 errors = [i for i in pitchfork_sentences if regex.search(i)]
 len(errors)
 del(regex, errors)
