@@ -2,7 +2,11 @@ import os
 import zipfile
 import sqlite3
 import re
-# import unicodedata
+import unicodedata
+from nltk import download
+download('punkt')
+from nltk.tokenize import sent_tokenize
+
 
 
 # Unzip DB
@@ -33,15 +37,15 @@ del(conn, cur)
 def normalize_unicode(query):
     data = []
     for row in query:
+        unicodedata.normalize("NFKD", row[0].strip())
         # Get rid of formatting and compact older reviews
         data.append(re.sub('\s+', ' ', row[0]))
-        # data.append(unicodedata.normalize("NFKD", row[0].strip()))
     return data
 
 pitchfork = normalize_unicode(pitchfork)
 
 
-# Create sentence tokes using regex, store sentence tokens in list
+# Create sentence tokens using regex, store sentence tokens in list
 # List can be used for processing but we'll write out a text file
 # Text file can be streamed to interator to feed gensim word2vec model
 # Reading back in will also make sure we're fully unicode regularized
@@ -51,7 +55,8 @@ pitchfork = normalize_unicode(pitchfork)
 def sentence_tokenize(corpus):
     sentences = []
     for i in range(len(corpus)):
-        temp = re.split('(?:(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<![A-Z]\.)(?<=\.|\?)\s|(?<=[.!?][\"”]) +)', corpus[i])
+        #temp = re.split('(?:(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<![A-Z]\.)(?<=\.|\?)\s|(?<=[.!?][\"”]) +)', corpus[i])
+        temp = sent_tokenize(corpus[i])
         for k in range(len(temp)):
             sentences.append(temp[k])
     sentences = list(filter(None, sentences))
@@ -59,20 +64,35 @@ def sentence_tokenize(corpus):
 
 pitchfork_sentences = sentence_tokenize(pitchfork)
 
-# There are 488 sentences with escapes followed by non-word characters
-# Hand sampling / search shows they are all embedded in the DB and site text
-# 16 sentences have \t, javascript errors in old reviews,
-# all quoting outside text. Those are of no consequence
-# There are 476 sentences with an \x* replacing words with
-# non-english characters not coded in unicode.
-# Sadly, those sentences with have to be removed to retain accuracy.
 
+# There are 503 sentences with escapes followed by non-word characters
+# Hand sampling / search shows they are all embedded in the DB and site text
 regex = re.compile(r'\\[a-z]')
+errors = [i for i in pitchfork_sentences if regex.search(i)]
+len(errors)
+
+# 10 sentences have \t, javascript errors in old reviews,
+# all quoting outside text. Those are of no consequence
+regex = re.compile(r'\\t')
 errors = [i for i in pitchfork_sentences if regex.search(i)]
 len(errors)
 
 pitchfork_sentences = [i for i in pitchfork_sentences if not regex.search(i)]
 
+# There are 490 sentences with a pattern \x[A-Z0-9][A-Z0-9] replacing
+# words with non-english characters not coded in unicode.
+# Inspection shows all can simply be deleted
+# without altering any sentence syntax (yay!).
+regex = re.compile(r'\\x[A-Z0-9][A-Z0-9]')
+errors = [i for i in pitchfork_sentences if regex.search(i)]
+len(errors)
+
+pitchfork_sentences = [re.sub(r'\\x[A-Z0-9][A-Z0-9]', '', i) for i in pitchfork_sentences]
+
+
+# No more encoding errors
+errors = [i for i in pitchfork_sentences if regex.search(i)]
+len(errors)
 del(regex, errors)
 
 
