@@ -43,6 +43,7 @@ model = word2vec.Word2Vec(pitchfork_sentences, size=300, window=5, min_count=2, 
 
 model.save("pitch2vec")
 
+
 vocab_size = len(model.wv.vocab)
 print(model.wv.index2word[0], model.wv.index2word[1], model.wv.index2word[2])
 print(model.wv.index2word[vocab_size - 1], model.wv.index2word[vocab_size - 2],
@@ -54,6 +55,7 @@ print(model.wv.similarity('woman', 'man'), model.wv.similarity('man', 'king'))
 print(model.wv.doesnt_match("green blue red zebra".split()))
 # Most similar words in model vocab
 print(model.wv.most_similar(positive="rock"))
+
 
 # Create list of integer indexes aligning with the model indexes
 vocab_index = index_vocab(pitchfork_sentences, model.wv)
