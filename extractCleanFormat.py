@@ -8,7 +8,6 @@ download('punkt')
 from nltk.tokenize import sent_tokenize
 
 
-
 # Unzip DB
 if os.path.exists('./data/database.sqlite.zip'):
     with zipfile.ZipFile('./Data/database.sqlite.zip') as myzip:
