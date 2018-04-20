@@ -1,5 +1,8 @@
 import re
 import sys
+from nltk import download
+download('punkt')
+from nltk.tokenize import sent_tokenize
 
 #if sys.version_info[0] >= 3:
     #unicode = str
