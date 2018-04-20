@@ -3,9 +3,8 @@ import zipfile
 import sqlite3
 import re
 import unicodedata
-from nltk import download
-download('punkt')
-from nltk.tokenize import sent_tokenize
+# Sentence tokenizer from local tokenizer module
+from tokenizers import sentence_tokenizer
 
 
 # Unzip DB
@@ -44,24 +43,13 @@ def normalize_corpus(query):
 pitchfork = normalize_corpus(pitchfork)
 
 
-# Create sentence tokens using regex, store sentence tokens in list
-# List can be used for processing but we'll write out a text file
+# Create sentence tokens using sentence_tokenizer from local tokenizer
+# module. Stores sentence tokens in list of list of reviews
+# Sentences object can be used for processing but we'll write out a text file
 # Text file can be streamed to interator to feed gensim word2vec model
 # Reading back in will also make sure we're fully unicode regularized
 
-# Function to split sentences using regex and create list of strings
-# where every string is a sentence in a review
-def sentence_tokenize(corpus):
-    sentences = []
-    for i in range(len(corpus)):
-        #temp = re.split('(?:(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<![A-Z]\.)(?<=\.|\?)\s|(?<=[.!?][\"”]) +)', corpus[i])
-        temp = sent_tokenize(corpus[i])
-        for k in range(len(temp)):
-            sentences.append(temp[k])
-    sentences = list(filter(None, sentences))
-    return sentences
-
-pitchfork_sentences = sentence_tokenize(pitchfork)
+pitchfork_sentences = sentence_tokenizer(pitchfork)
 
 
 # There are 503 sentences with escapes followed by non-word characters
