@@ -5,10 +5,13 @@ import numpy as np
 """Simple TensorFlow based validation model for word2vec model
    Functions solely to:
    1) Validate word2vec model parameters 
-   2) Examine performance of
-        A) Validate performance of Pitchfork reveiw data set
-        B) Validate with addition of last years of scraped review added
-        C) Validate model with Stanford GloVe embeddings then trained on Pitchfork data """
+   2) Examine model performance:
+        A) Validate performance of Pitchfork review data set
+        B) Validate with the addition of the last year of scraped reviews added
+        C) Validate model with Stanford GloVe embeddings then trained on Pitchfork data 
+        
+    3) Will further be use to evaluate performance of the more granular Penn Treebank
+       tokenizer in a wor2vec model vs costom tokenizer and Facebooks FastTest model """
 
 
 def w2v_tf_validation(embedding_matrix, wv):
