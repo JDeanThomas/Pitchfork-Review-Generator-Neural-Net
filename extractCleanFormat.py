@@ -33,7 +33,7 @@ del(conn, cur)
 
 # Normalize funky formatting of old reviews
 
-def normalize_unicode(query):
+def normalize_corpus(query):
     data = []
     for row in query:
         unicodedata.normalize("NFKD", row[0].strip())
@@ -41,7 +41,7 @@ def normalize_unicode(query):
         data.append(re.sub('\s+', ' ', row[0]))
     return data
 
-pitchfork = normalize_unicode(pitchfork)
+pitchfork = normalize_corpus(pitchfork)
 
 
 # Create sentence tokens using regex, store sentence tokens in list
