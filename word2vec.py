@@ -1,7 +1,10 @@
-from gensim.models import word2vec
 import logging
 import numpy as np
-
+from gensim.models import word2vec
+# Local tokenizers and corpus file I/O
+from tokenizers import word_tokenizer, tokenize_words, tokenize_sentence_file
+# Local TensorFlow word2vec validation model
+from w2vValidationModel import w2v_tf_validation
 
 def index_vocab(corpus, wv):
     index = []
@@ -21,21 +24,11 @@ def make_embedding_matrix(model, vector_dim):
     return embedding_matrix
 
 
-def preprocess(filename):
-    # Longest non-coined, non-technical word in the Oxford English Dictionary
-    bound = len('Antidisestablishmentarianism')
-    corpus = []
-    with open(filename, "r") as f:
-        for sen in f.readlines():
-            #corpus.append(gensim.utils.simple_preprocess(sen, min_len=1, max_len=bound))
-            corpus.append(simple_preprocess(sen, min_len=1, max_len=bound))
-        return corpus
-
-pitchfork_sentences = preprocess('./Data/pitchfork_sentences.txt')
+tokenized_sentences = tokenize_sentence_file('./Data/pitchfork_sentences.txt')
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-model = word2vec.Word2Vec(pitchfork_sentences, size=300, window=5, min_count=2, iter=10,
+model = word2vec.Word2Vec(tokenized_sentences, size=300, window=10, min_count=2, iter=10,
                                      sample=0.00001, sg=1, negative=20,
                                      compute_loss=True, workers=8)
 
@@ -43,22 +36,29 @@ model.save("pitch2vec")
 
 
 vocab_size = len(model.wv.vocab)
-print(model.wv.index2word[0], model.wv.index2word[1], model.wv.index2word[2])
-print(model.wv.index2word[vocab_size - 1], model.wv.index2word[vocab_size - 2],
-      model.wv.index2word[vocab_size - 3])
-print('Index of "of" is: {}'.format(model.wv.vocab['of'].index))
+
+# 20 most common words
+print(model.wv.index2word[:19])
+# 20 least common words
+print(model.wv.index2word[vocab_size - 20:])
+# Index of string "music"
+print('Index of "music" is: {}'.format(model.wv.vocab['music'].index))
 # Similarity
 print(model.wv.similarity('woman', 'man'), model.wv.similarity('man', 'king'))
 # What doesn't fit?
-print(model.wv.doesnt_match("green blue red zebra".split()))
+print(model.wv.doesnt_match("green blue red guitar".split()))
 # Most similar words in model vocab
-print(model.wv.most_similar(positive="rock"))
+print('Most similar words to "indie" is: ', model.wv.most_similar(positive="indie"))
 
 
 # Create list of integer indexes aligning with the model indexes
-vocab_index = index_vocab(pitchfork_sentences, model.wv)
+vocab_index = index_vocab(tokenized_sentences, model.wv)
 
-print(str_data[:4], index_data[:4])
+print(tokenized_sentences[0][:4], vocab_index[:4])
+
 
 # Convert the wv word vectors into a numpy matrix
 embeddings = make_embedding_matrix(model.wv, 300)
+
+# TensorFlow model as evaluation model for word2vec model
+w2v_tf_validation(embeddings, model.wv)
