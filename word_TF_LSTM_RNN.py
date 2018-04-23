@@ -6,9 +6,6 @@ import argparse
 import datetime as dt
 from gensim.models import word2vec
 
-"""To run this code, you'll need to first download and extract the text dataset
-    from here: http://www.fit.vutbr.cz/~imikolov/rnnlm/simple-examples.tgz. Change the
-    data_path variable below to your local exraction path"""
 
 model = word2vec.Word2Vec.load('pitch2vec')
 
