@@ -263,14 +263,3 @@ def test(model_path, test_data, reversed_dictionary):
         coord.request_stop()
         coord.join(threads)
 
-
-if args.data_path:
-    data_path = args.data_path
-train_data, valid_data, test_data, vocabulary, reversed_dictionary = load_data()
-if args.run_opt == 1:
-    train(train_data, vocabulary, num_layers=2, num_epochs=60, batch_size=20,
-          model_save_name='two-layer-lstm-medium-config-60-epoch-0p93-lr-decay-10-max-lr')
-else:
-    trained_model = args.data_path + "\\two-layer-lstm-medium-config-60-epoch-0p93-lr-decay-10-max-lr-38"
-    test(trained_model, test_data, reversed_dictionary)
-
