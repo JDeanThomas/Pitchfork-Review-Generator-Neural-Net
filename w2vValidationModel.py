@@ -14,15 +14,15 @@ import numpy as np
        tokenizer in a wor2vec model vs costom tokenizer and Facebooks FastTest model """
 
 
-def w2v_tf_validation(embedding_matrix, wv):
-    validation_size = 20  # Random set of words to evaluate similarity on.
-    validation_window = 100  # Only pick dev samples in the head of the distribution.
+def w2v_tf_validation(embedding_matrix, wv, trainable=False):
+    validation_size = 50  # Random set of words to evaluate similarity on.
+    validation_window = 1000  # Only pick dev samples in the head of the distribution.
     validation_examples = np.random.choice(validation_window, validation_size, replace=False)
     validation_dataset = tf.constant(validation_examples, dtype=tf.int32)
 
-    # embedding layer weights are frozen to avoid updating
+
     saved_embeddings = tf.constant(embedding_matrix)
-    embedding = tf.Variable(initial_value=saved_embeddings, trainable=False)
+    embedding = tf.Variable(initial_value=saved_embeddings, trainable=trainable)
 
     # Cosine similarity
     norm = tf.sqrt(tf.reduce_sum(tf.square(embedding), 1, keep_dims=True))
