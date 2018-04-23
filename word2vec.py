@@ -16,7 +16,7 @@ def index_vocab(corpus, wv):
 
 def make_embedding_matrix(model, vector_dim):
     # convert the wv word vectors into a numpy matrix
-    embedding_matrix = np.zeros((len(model.wv.vocab), vector_dim))
+    embedding_matrix = np.zeros((len(model.wv.vocab), vector_dim), np.float32)
     for i in range(len(model.wv.vocab)):
         embedding_vector = model.wv[model.wv.index2word[i]]
         if embedding_vector is not None:
@@ -28,9 +28,9 @@ tokenized_sentences = tokenize_sentence_file('./Data/pitchfork_sentences.txt')
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-model = word2vec.Word2Vec(tokenized_sentences, size=300, window=10, min_count=2, iter=10,
-                                     sample=0.00001, sg=1, negative=20,
-                                     compute_loss=True, workers=8)
+model = word2vec.Word2Vec(tokenized_sentences, size=300, window=8, min_count=2, iter=10,
+                                               sample=0.00001, sg=1, negative=20,
+                                               compute_loss=True, workers=8)
 
 model.save("pitch2vec")
 
@@ -60,5 +60,5 @@ print(tokenized_sentences[0][:4], vocab_index[:4])
 # Convert the wv word vectors into a numpy matrix
 embeddings = make_embedding_matrix(model.wv, 300)
 
-# TensorFlow model as evaluation model for word2vec model
+# TensorFlow evaluation model for word2vec (or other) word embeddings
 w2v_tf_validation(embeddings, model.wv)
