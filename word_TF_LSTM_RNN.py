@@ -1,8 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import collections
-import os
-import argparse
 import datetime as dt
 from gensim.models import word2vec
 
@@ -82,7 +80,6 @@ def batch_producer(raw_data, batch_size, num_steps):
     y.set_shape([batch_size, num_steps])
     return x, y
 
-
 class Input(object):
     def __init__(self, batch_size, num_steps, data):
         self.batch_size = batch_size
@@ -104,7 +101,7 @@ class Model(object):
         # create the word embeddings
         with tf.device("/cpu:0"):
             saved_embeddings = tf.constant(embeddings)
-            embedding = tf.Variable(initial_value=saved_embeddings,  trainable=True)
+            embedding = tf.Variable(initial_value=saved_embeddings, trainable=True)
             inputs = tf.nn.embedding_lookup(embedding, self.input_obj.input_data)
 
         if is_training and dropout < 1:
@@ -122,21 +119,13 @@ class Model(object):
         # create an LSTM cell to be unrolled
         def LSTM_cell():
             return tf.contrib.rnn.LSTMCell(hidden_size, forget_bias=1.0, reuse=True)
+
         # add a dropout wrapper if training
         if is_training and dropout < 1:
             cell = tf.contrib.rnn.DropoutWrapper(LSTM_cell(), output_keep_prob=dropout)
         if num_layers > 1:
-            #with tf.variable_scope(tf.get_variable_scope(), reuse=True):
-            cell = tf.contrib.rnn.MultiRNNCell([LSTM_cell() for _ in range(num_layers)], state_is_tuple=True)
-
-        ####
-        #def lstm_cell():
-            #lstm = tf.contrib.rnn.LSTMCell(hidden_size, state_is_tuple=True, reuse=True)
-            #drop = tf.contrib.rnn.DropoutWrapper(lstm, output_keep_prob=dropout)
-            #return drop
-
-        #cell = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(num_layers)], state_is_tuple=True)
-        ####
+            with tf.variable_scope(tf.get_variable_scope(), reuse=True):
+                cell = tf.contrib.rnn.MultiRNNCell([LSTM_cell() for _ in range(num_layers)], state_is_tuple=True)
 
         output, self.state = tf.nn.dynamic_rnn(cell, inputs, dtype=tf.float32, initial_state=rnn_tuple_state)
         # reshape to (batch_size * num_steps, hidden_size)
@@ -185,6 +174,7 @@ class Model(object):
         session.run(self.lr_update, feed_dict={self.new_lr: lr_value})
 
 
+
 def train(train_data, vocabulary, num_layers, num_epochs, batch_size, model_save_name,
           learning_rate=1.0, max_lr_epoch=10, lr_decay=0.93, print_iter=50):
     # setup data and models
@@ -205,6 +195,7 @@ def train(train_data, vocabulary, num_layers, num_epochs, batch_size, model_save
             # m.assign_lr(sess, learning_rate)
             # print(m.learning_rate.eval(), new_lr_decay)
             current_state = np.zeros((num_layers, 2, batch_size, m.hidden_size))
+            #current_state = tf.zeros([num_layers, 2, batch_size, m.hidden_size], dtype=tf.float32)
             curr_time = dt.datetime.now()
             for step in range(training_input.epoch_size):
                 # cost, _ = sess.run([m.cost, m.optimizer])
@@ -262,4 +253,3 @@ def test(model_path, test_data, reversed_dictionary):
         # close threads
         coord.request_stop()
         coord.join(threads)
-
