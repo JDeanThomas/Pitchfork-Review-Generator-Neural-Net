@@ -55,17 +55,11 @@ def file_to_word_ids(filename, word_to_id):
 # Edit file loadings
 def load_data():
     # get the data paths
-    #train_path = os.path.join(data_path, "ptb.train.txt")
-    #valid_path = os.path.join(data_path, "ptb.valid.txt")
-    #test_path = os.path.join(data_path, "ptb.test.txt")
-
     train_path = "./Data/pitchfork_sentences.txt"
 
     # build the complete vocabulary, then convert text data to list of integers
     word_to_id = build_vocab(train_path)
     train_data = file_to_word_ids(train_path, word_to_id)
-    #valid_data = file_to_word_ids(valid_path, word_to_id)
-    #test_data = file_to_word_ids(test_path, word_to_id)
     vocabulary = len(word_to_id)
     reversed_dictionary = dict(zip(word_to_id.values(), word_to_id.keys()))
 
@@ -73,7 +67,6 @@ def load_data():
     print(word_to_id)
     print(vocabulary)
     print(" ".join([reversed_dictionary[x] for x in train_data[:10]]))
-    #return train_data, valid_data, test_data, vocabulary, reversed_dictionary
     return train_data, vocabulary, reversed_dictionary
 
 
@@ -114,14 +107,8 @@ class Model(object):
 
         # create word embeddings
         with tf.device("/cpu:0"):
-            embedding = tf.Variable(tf.random_uniform([vocab_size, self.hidden_size], -init_scale, init_scale))
-            inputs = tf.nn.embedding_lookup(embedding, self.input_obj.input_data)
-            #saved_embeddings = tf.constant(embeddings)
-            #embedding = tf.Variable(initial_value=saved_embeddings, trainable=False)
-            #inputs = tf.nn.embedding_lookup(embedding, self.input_obj.input_data)
-            #with tf.variable_scope(tf.get_variable_scope(), reuse=True):
-                #embedding = tf.get_variable(initial_value=saved_embeddings, trainable=False)
-
+            saved_embeddings = tf.constant(embeddings)
+            embedding = tf.Variable(initial_value=saved_embeddings, trainable=False)
 
         if is_training and dropout < 1:
             inputs = tf.nn.dropout(inputs, dropout)
