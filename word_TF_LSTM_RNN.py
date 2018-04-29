@@ -1,6 +1,8 @@
 import tensorflow as tf
 import numpy as np
 import collections
+import os
+#import argparse
 import datetime as dt
 from gensim.models import word2vec
 
@@ -12,16 +14,19 @@ model = word2vec.Word2Vec.load('pitch2vec')
 from word2vec import make_embedding_matrix
 embeddings = make_embedding_matrix(model.wv, 300)
 
-data_path = "./TF Model"
-
 
 train_data, vocabulary, reversed_dictionary = load_data()
 
-train(train_data, vocabulary, num_layers=2, num_epochs=60, batch_size=20,
+train(train_data, vocabulary, num_layers=2, num_epochs=1, batch_size=20,
       model_save_name='two-layer-lstm-medium-config-60-epoch-0p93-lr-decay-10-max-lr')
+
+
 
 trained_model = args.data_path + "\\two-layer-lstm-medium-config-60-epoch-0p93-lr-decay-10-max-lr-38"
 test(trained_model, test_data, reversed_dictionary)
+
+
+data_path = "./TF Model"
 
 filename = "./Data/pitchfork_sentences.txt"
 
@@ -46,13 +51,21 @@ def file_to_word_ids(filename, word_to_id):
     data = read_words(filename)
     return [word_to_id[word] for word in data if word in word_to_id]
 
-
+# Create train, validation, text? Cross validation?
+# Edit file loadings
 def load_data():
+    # get the data paths
+    #train_path = os.path.join(data_path, "ptb.train.txt")
+    #valid_path = os.path.join(data_path, "ptb.valid.txt")
+    #test_path = os.path.join(data_path, "ptb.test.txt")
+
     train_path = "./Data/pitchfork_sentences.txt"
 
     # build the complete vocabulary, then convert text data to list of integers
     word_to_id = build_vocab(train_path)
     train_data = file_to_word_ids(train_path, word_to_id)
+    #valid_data = file_to_word_ids(valid_path, word_to_id)
+    #test_data = file_to_word_ids(test_path, word_to_id)
     vocabulary = len(word_to_id)
     reversed_dictionary = dict(zip(word_to_id.values(), word_to_id.keys()))
 
@@ -60,6 +73,7 @@ def load_data():
     print(word_to_id)
     print(vocabulary)
     print(" ".join([reversed_dictionary[x] for x in train_data[:10]]))
+    #return train_data, valid_data, test_data, vocabulary, reversed_dictionary
     return train_data, vocabulary, reversed_dictionary
 
 
@@ -90,19 +104,24 @@ class Input(object):
 
 # create the main model
 class Model(object):
-    def __init__(self, input, is_training, hidden_size, vocab_size, num_layers,
-                 dropout=0.5, init_scale=0.05):
+    def __init__(self, input, is_training, hidden_size, vocab_size,
+                 num_layers, dropout=0.5, init_scale=0.05):
         self.is_training = is_training
         self.input_obj = input
         self.batch_size = input.batch_size
         self.num_steps = input.num_steps
         self.hidden_size = hidden_size
 
-        # create the word embeddings
+        # create word embeddings
         with tf.device("/cpu:0"):
-            saved_embeddings = tf.constant(embeddings)
-            embedding = tf.Variable(initial_value=saved_embeddings, trainable=True)
+            embedding = tf.Variable(tf.random_uniform([vocab_size, self.hidden_size], -init_scale, init_scale))
             inputs = tf.nn.embedding_lookup(embedding, self.input_obj.input_data)
+            #saved_embeddings = tf.constant(embeddings)
+            #embedding = tf.Variable(initial_value=saved_embeddings, trainable=False)
+            #inputs = tf.nn.embedding_lookup(embedding, self.input_obj.input_data)
+            #with tf.variable_scope(tf.get_variable_scope(), reuse=True):
+                #embedding = tf.get_variable(initial_value=saved_embeddings, trainable=False)
+
 
         if is_training and dropout < 1:
             inputs = tf.nn.dropout(inputs, dropout)
@@ -118,7 +137,7 @@ class Model(object):
 
         # create an LSTM cell to be unrolled
         def LSTM_cell():
-            return tf.contrib.rnn.LSTMCell(hidden_size, forget_bias=1.0, reuse=True)
+            return tf.contrib.rnn.LSTMCell(hidden_size, forget_bias=1.0)
 
         # add a dropout wrapper if training
         if is_training and dropout < 1:
@@ -160,29 +179,22 @@ class Model(object):
 
         tvars = tf.trainable_variables()
         grads, _ = tf.clip_by_global_norm(tf.gradients(self.cost, tvars), 5)
-        optimizer = tf.train.GradientDescentOptimizer(self.learning_rate)
-        # optimizer = tf.train.AdamOptimizer(self.learning_rate)
+        optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999,
+                                           epsilon=1e-08, use_locking=False, name='Adam')
         self.train_op = optimizer.apply_gradients(
             zip(grads, tvars),
-            global_step=tf.contrib.framework.get_or_create_global_step())
-        # self.optimizer = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.cost)
-
-        self.new_lr = tf.placeholder(tf.float32, shape=[])
-        self.lr_update = tf.assign(self.learning_rate, self.new_lr)
-
-    def assign_lr(self, session, lr_value):
-        session.run(self.lr_update, feed_dict={self.new_lr: lr_value})
+            global_step=tf.train.get_or_create_global_step())
+        #self.train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
 
 
-
-def train(train_data, vocabulary, num_layers, num_epochs, batch_size, model_save_name,
-          learning_rate=1.0, max_lr_epoch=10, lr_decay=0.93, print_iter=50):
+def train(train_data, vocabulary, num_layers, num_epochs,
+          batch_size, model_save_name,  print_iter=50):
     # setup data and models
     training_input = Input(batch_size=batch_size, num_steps=35, data=train_data)
-    m = Model(training_input, is_training=True, hidden_size=300, vocab_size=vocabulary,
-              num_layers=num_layers)
+    m = Model(training_input, is_training=True, hidden_size=300,
+                              vocab_size=vocabulary, num_layers=num_layers)
     init_op = tf.global_variables_initializer()
-    orig_decay = lr_decay
+
     with tf.Session() as sess:
         # start threads
         sess.run([init_op])
@@ -190,15 +202,9 @@ def train(train_data, vocabulary, num_layers, num_epochs, batch_size, model_save
         threads = tf.train.start_queue_runners(coord=coord)
         saver = tf.train.Saver()
         for epoch in range(num_epochs):
-            new_lr_decay = orig_decay ** max(epoch + 1 - max_lr_epoch, 0.0)
-            m.assign_lr(sess, learning_rate * new_lr_decay)
-            # m.assign_lr(sess, learning_rate)
-            # print(m.learning_rate.eval(), new_lr_decay)
             current_state = np.zeros((num_layers, 2, batch_size, m.hidden_size))
-            #current_state = tf.zeros([num_layers, 2, batch_size, m.hidden_size], dtype=tf.float32)
             curr_time = dt.datetime.now()
             for step in range(training_input.epoch_size):
-                # cost, _ = sess.run([m.cost, m.optimizer])
                 if step % print_iter != 0:
                     cost, _, current_state = sess.run([m.cost, m.train_op, m.state],
                                                       feed_dict={m.init_state: current_state})
@@ -214,42 +220,6 @@ def train(train_data, vocabulary, num_layers, num_epochs, batch_size, model_save
             saver.save(sess, data_path + '\\' + model_save_name, global_step=epoch)
         # do a final save
         saver.save(sess, data_path + '\\' + model_save_name + '-final')
-        # close threads
-        coord.request_stop()
-        coord.join(threads)
-
-
-def test(model_path, test_data, reversed_dictionary):
-    test_input = Input(batch_size=20, num_steps=35, data=test_data)
-    m = Model(test_input, is_training=False, hidden_size=300, vocab_size=vocabulary,
-              num_layers=2)
-    saver = tf.train.Saver()
-    with tf.Session() as sess:
-        # start threads
-        coord = tf.train.Coordinator()
-        threads = tf.train.start_queue_runners(coord=coord)
-        current_state = np.zeros((2, 2, m.batch_size, m.hidden_size))
-        # restore the trained model
-        saver.restore(sess, model_path)
-        # get an average accuracy over num_acc_batches
-        num_acc_batches = 30
-        check_batch_idx = 25
-        acc_check_thresh = 5
-        accuracy = 0
-        for batch in range(num_acc_batches):
-            if batch == check_batch_idx:
-                true_vals, pred, current_state, acc = sess.run([m.input_obj.targets, m.predict, m.state, m.accuracy],
-                                                               feed_dict={m.init_state: current_state})
-                pred_string = [reversed_dictionary[x] for x in pred[:m.num_steps]]
-                true_vals_string = [reversed_dictionary[x] for x in true_vals[0]]
-                print("True values (1st line) vs predicted values (2nd line):")
-                print(" ".join(true_vals_string))
-                print(" ".join(pred_string))
-            else:
-                acc, current_state = sess.run([m.accuracy, m.state], feed_dict={m.init_state: current_state})
-            if batch >= acc_check_thresh:
-                accuracy += acc
-        print("Average accuracy: {:.3f}".format(accuracy / (num_acc_batches-acc_check_thresh)))
         # close threads
         coord.request_stop()
         coord.join(threads)
