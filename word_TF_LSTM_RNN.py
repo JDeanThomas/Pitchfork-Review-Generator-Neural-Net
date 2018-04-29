@@ -109,6 +109,7 @@ class Model(object):
         with tf.device("/cpu:0"):
             saved_embeddings = tf.constant(embeddings)
             embedding = tf.Variable(initial_value=saved_embeddings, trainable=False)
+            inputs = tf.nn.embedding_lookup(embedding, self.input_obj.input_data)
 
         if is_training and dropout < 1:
             inputs = tf.nn.dropout(inputs, dropout)
