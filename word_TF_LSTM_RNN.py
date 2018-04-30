@@ -15,7 +15,7 @@ from word2vec import make_embedding_matrix
 embeddings = make_embedding_matrix(model.wv, 300)
 
 
-train_data, vocabulary, reversed_dictionary = load_data()
+train_data, vocabulary, reversed_dictionary = construct_data()
 
 train(train_data, vocabulary, num_layers=2, num_epochs=1, batch_size=20,
       model_save_name='two-layer-lstm-medium-config-60-epoch-0p93-lr-decay-10-max-lr')
@@ -31,13 +31,13 @@ data_path = "./TF Model"
 filename = "./Data/pitchfork_sentences.txt"
 
 
-def read_words(filename):
+def file_to_words(filename):
     with open(filename, 'r') as file:
     return file.read().split()
 
 # Play with. Use regex tokenized sentences for now. Try Penn tokens
-def build_vocab(filename):
-    data = read_words(filename)
+def generate_vocab(filename):
+    data = file_to_words(filename)
 
     counter = collections.Counter(data)
     count_pairs = sorted(counter.items(), key=lambda x: (-x[1], x[0]))
@@ -47,30 +47,24 @@ def build_vocab(filename):
 
     return word_to_id
 
-def file_to_word_ids(filename, word_to_id):
-    data = read_words(filename)
+def Convert_word_ids(filename, word_to_id):
+    data = file_to_words(filename)
     return [word_to_id[word] for word in data if word in word_to_id]
 
-# Create train, validation, text? Cross validation?
 # Edit file loadings
-def load_data():
+def construct_data():
     # get the data paths
     train_path = "./Data/pitchfork_sentences.txt"
 
     # build the complete vocabulary, then convert text data to list of integers
-    word_to_id = build_vocab(train_path)
-    train_data = file_to_word_ids(train_path, word_to_id)
+    word_to_id = generate_vocab(train_path)
+    train_data = Convert_word_ids(train_path, word_to_id)
     vocabulary = len(word_to_id)
     reversed_dictionary = dict(zip(word_to_id.values(), word_to_id.keys()))
-
-    print(train_data[:5])
-    print(word_to_id)
-    print(vocabulary)
-    print(" ".join([reversed_dictionary[x] for x in train_data[:10]]))
     return train_data, vocabulary, reversed_dictionary
 
 
-def batch_producer(raw_data, batch_size, num_steps):
+def create_batches(raw_data, batch_size, num_steps):
     raw_data = tf.convert_to_tensor(raw_data, name="raw_data", dtype=tf.int32)
 
     data_len = tf.size(raw_data)
@@ -92,7 +86,7 @@ class Input(object):
         self.batch_size = batch_size
         self.num_steps = num_steps
         self.epoch_size = ((len(data) // batch_size) - 1) // num_steps
-        self.input_data, self.targets = batch_producer(data, batch_size, num_steps)
+        self.input_data, self.targets = create_batches(data, batch_size, num_steps)
 
 
 # create the main model
@@ -123,10 +117,13 @@ class Model(object):
              for idx in range(num_layers)]
         )
 
+        # He initialization with fan in / fan out averaging
+        he_init = tf.contrib.layers.variance_scaling_initializer(mode="FAN_AVG")
+
         # create an LSTM cell to be unrolled
         def LSTM_cell():
-            return tf.contrib.rnn.LSTMCell(hidden_size, forget_bias=1.0)
-
+            return tf.contrib.rnn.LSTMCell(hidden_size, forget_bias=1.0, initializer=he_init,
+                                                                         activation=tf.nn.elu)
         # add a dropout wrapper if training
         if is_training and dropout < 1:
             cell = tf.contrib.rnn.DropoutWrapper(LSTM_cell(), output_keep_prob=dropout)
