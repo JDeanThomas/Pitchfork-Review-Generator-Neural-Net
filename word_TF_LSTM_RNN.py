@@ -121,7 +121,7 @@ class Model(object):
         he_init = tf.contrib.layers.variance_scaling_initializer(mode="FAN_AVG")
 
         # create an LSTM cell to be unrolled
-        def LSTM_cell():
+        def LSTM_cell(self.is_training, dropout):
             cell = tf.contrib.rnn.LSTMCell(hidden_size, forget_bias=1.0, initializer=he_init,
                                                                          activation=tf.nn.elu)
             # add a dropout wrapper if training
