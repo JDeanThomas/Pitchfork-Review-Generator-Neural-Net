@@ -122,11 +122,13 @@ class Model(object):
 
         # create an LSTM cell to be unrolled
         def LSTM_cell():
-            return tf.contrib.rnn.LSTMCell(hidden_size, forget_bias=1.0, initializer=he_init,
+            cell = tf.contrib.rnn.LSTMCell(hidden_size, forget_bias=1.0, initializer=he_init,
                                                                          activation=tf.nn.elu)
-        # add a dropout wrapper if training
-        if is_training and dropout < 1:
-            cell = tf.contrib.rnn.DropoutWrapper(LSTM_cell(), output_keep_prob=dropout)
+            # add a dropout wrapper if training
+            if is_training and dropout < 1:
+                cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=dropout)
+            return cell
+        
         if num_layers > 1:
             with tf.variable_scope(tf.get_variable_scope(), reuse=True):
                 cell = tf.contrib.rnn.MultiRNNCell([LSTM_cell() for _ in range(num_layers)], state_is_tuple=True)
